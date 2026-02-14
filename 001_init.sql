@@ -1,8 +1,15 @@
--- 001_init.sql
-  times_of_day text[] not null default array[]::text[],
-  days_of_week int[] not null default array[]::int[],
-  is_enabled boolean not null default true,
-  created_at timestamptz not null default now()
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  handle text unique not null check (char_length(handle) between 3 and 20),
+  avatar_seed text not null,
+  timezone text not null,
+  age smallint not null check (age between 13 and 120),
+  gender text not null check (gender in ('male','female','other','prefer_not')),
+  xp_total integer not null default 0,
+  level integer not null default 1,
+  reputation_score integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists user_schedules_user_idx on public.user_schedules(user_id);
@@ -59,4 +66,5 @@ $$ language plpgsql;
 
 drop trigger if exists profiles_updated_at on public.profiles;
 create trigger profiles_updated_at before update on public.profiles
+
 for each row execute procedure public.set_updated_at();
