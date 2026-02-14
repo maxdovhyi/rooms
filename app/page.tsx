@@ -48,7 +48,7 @@ export default function HomePage() {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    router.push(profile ? '/dashboard' : '/onboarding');
+    router.push(profile ? '/world' : '/onboarding');
   };
 
   return (
