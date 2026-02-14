@@ -46,6 +46,8 @@ create table if not exists public.room_templates (
   slug text unique not null,
   title text not null,
   description text,
+  verification_mode text not null default 'self' check (verification_mode in ('self','buddy','host')),
+  is_featured boolean not null default false,
   program_json jsonb not null default '{}'::jsonb,
   default_duration_sec integer not null default 360,
   is_enabled boolean not null default true,
@@ -55,11 +57,13 @@ create table if not exists public.room_templates (
 create index if not exists room_templates_disc_idx on public.room_templates(discipline_id);
 
 -- seed room templates (idempotent)
-insert into public.room_templates (discipline_id, slug, title, description, default_duration_sec, program_json)
+insert into public.room_templates (discipline_id, slug, title, description, verification_mode, is_featured, default_duration_sec, program_json)
 select d.id,
        'pushups_hourly',
        'Push-ups Room',
        'Intervals: work/rest. Tap +1/+5/+10 as you go.',
+       'self',
+       true,
        360,
        jsonb_build_object(
          'steps', jsonb_build_array(
@@ -78,11 +82,13 @@ from public.disciplines d
 where d.slug = 'pushups'
 on conflict (slug) do nothing;
 
-insert into public.room_templates (discipline_id, slug, title, description, default_duration_sec, program_json)
+insert into public.room_templates (discipline_id, slug, title, description, verification_mode, is_featured, default_duration_sec, program_json)
 select d.id,
        'meditation_hourly',
        'Meditation Room',
        'Guided 6-minute focus session.',
+       'buddy',
+       true,
        360,
        jsonb_build_object(
          'steps', jsonb_build_array(
@@ -97,11 +103,13 @@ from public.disciplines d
 where d.slug = 'meditation'
 on conflict (slug) do nothing;
 
-insert into public.room_templates (discipline_id, slug, title, description, default_duration_sec, program_json)
+insert into public.room_templates (discipline_id, slug, title, description, verification_mode, is_featured, default_duration_sec, program_json)
 select d.id,
        'wim_hof_hourly',
        'Wim Hof Room',
        '2 rounds (MVP). Do seated/lying. Not in water, not driving.',
+       'host',
+       true,
        360,
        jsonb_build_object(
          'safety', jsonb_build_object(
@@ -220,3 +228,55 @@ drop trigger if exists profiles_updated_at on public.profiles;
 create trigger profiles_updated_at
 before update on public.profiles
 for each row execute procedure public.set_updated_at();
+
+
+-- sprint 4 extensions for scoring/history compatibility
+alter table public.sessions
+  add column if not exists user_id uuid references auth.users(id) on delete set null,
+  add column if not exists participant_key text,
+  add column if not exists result_value integer,
+  add column if not exists xp_awarded integer,
+  add column if not exists attendance_ratio numeric(5,4),
+  add column if not exists completed_at timestamptz;
+
+create index if not exists sessions_user_idx on public.sessions(user_id, created_at desc);
+create index if not exists sessions_participant_idx on public.sessions(participant_key, created_at desc);
+
+create table if not exists public.guest_streaks (
+  participant_key text primary key,
+  current integer not null default 0,
+  best integer not null default 0,
+  last_completed_date date
+);
+
+alter table public.sessions enable row level security;
+alter table public.daily_streaks enable row level security;
+alter table public.guest_streaks enable row level security;
+
+drop policy if exists "sessions_select_public" on public.sessions;
+create policy "sessions_select_public"
+on public.sessions
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "sessions_insert_public" on public.sessions;
+create policy "sessions_insert_public"
+on public.sessions
+for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists "daily_streaks_select_public" on public.daily_streaks;
+create policy "daily_streaks_select_public"
+on public.daily_streaks
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "guest_streaks_select_public" on public.guest_streaks;
+create policy "guest_streaks_select_public"
+on public.guest_streaks
+for select
+to anon, authenticated
+using (true);

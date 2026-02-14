@@ -1,36 +1,43 @@
-# Ritual Rooms — Sprint 1 MVP
+# Ritual Rooms — Sprint 5 (MVP-1 polish)
 
-MVP-минимум по `spec.md`: skeleton + auth + onboarding + dashboard.
+Спринт 5 добавляет Self leaderboards, базовые ачивки, invite links и friends flow.
 
 ## Что реализовано
-- Next.js (App Router) + TypeScript + Tailwind
-- Маршруты:
-  - `/` — логин/регистрация через Supabase magic link + кнопка Continue
-  - `/onboarding` — форма handle/age/gender + auto timezone и upsert в `public.profiles`
-  - `/dashboard` — отображение `handle`, `xp_total`, `level`, `streak`
-  - `/lobby` — список комнат из `room_templates`
-  - `/room/[id]` — каркас комнаты с кнопкой Start
+- **Leaderboards**
+  - Страница `/leaderboards` с таблицами Today/Week.
+  - SQL view-миграция для `leaderboard_today` и `leaderboard_week`.
+- **Achievements (базовые)**
+  - API `GET /api/achievements?userId=...`.
+  - Dashboard показывает achievements-плитки (first session, 10 sessions, streak, XP цели).
+- **Invites + Friends**
+  - API `POST /api/invites/create` — генерирует invite code.
+  - API `POST /api/invites/accept` — принимает код и создаёт accepted friend edge.
+  - API `GET /api/friends?userId=...` — список друзей.
+  - Страницы `/invites` и `/friends`.
+- **Dashboard polish**
+  - Ссылки на `/leaderboards`, `/friends`, `/invites`.
+  - Показ streak, achievements, recent sessions.
 
-## Локальный запуск
-1. Установите зависимости:
-   ```bash
-   npm install
-   ```
-2. Создайте `.env.local` на основе примера:
-   ```bash
-   cp .env.example .env.local
-   ```
-3. Заполните переменные Supabase в `.env.local`:
+## SQL / migrations
+Примените по порядку:
+1. `supabase/migrations/20260214120000_sprint2_data_schedule.sql`
+2. `supabase/migrations/20260214170000_sprint4_scoring_history.sql`
+3. `supabase/migrations/20260214190000_sprint5_polish.sql`
+4. `supabase/migrations/20260214190500_sprint5_leaderboards_views.sql`
+5. `sql/seed_sprint2.sql`
+
+## Setup
+1. `npm install`
+2. `cp .env.example .env.local`
+3. Заполните:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. Запустите dev-сервер:
-   ```bash
-   npm run dev
-   ```
-5. Откройте http://localhost:3000
+   - `SUPABASE_SERVICE_ROLE_KEY`
+4. `npm run dev`
 
-## Проверка потока
-1. На `/` введите email и отправьте magic link.
-2. После логина нажмите `Continue`.
-3. Если профиль отсутствует в `public.profiles`, откроется `/onboarding`.
-4. Заполните форму, после upsert произойдет редирект на `/dashboard`.
+## Sprint coverage
+- Sprint 1: auth/onboarding/dashboard ✅
+- Sprint 2: data + schedule + lobby ✅
+- Sprint 3: realtime room arena ✅
+- Sprint 4: scoring + history + streak ✅
+- Sprint 5: leaderboards + achievements + invites/friends base ✅
