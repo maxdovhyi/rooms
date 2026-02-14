@@ -1,13 +1,13 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
+import { createRequire } from 'module';
 
+const require = createRequire(import.meta.url);
 const plugins = { tailwindcss: {} };
 
 try {
-  require.resolve("autoprefixer");
+  require.resolve('autoprefixer');
   plugins.autoprefixer = {};
-} catch (e) {
-  // autoprefixer нет — продолжаем без него
+} catch {
+  // autoprefixer is optional in this environment
 }
 
 export default { plugins };

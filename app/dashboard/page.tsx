@@ -114,8 +114,15 @@ export default function DashboardPage() {
         </ul>
       </section>
 
+      <div className="mb-3">
+        <Link href="/world" className="rounded-md bg-indigo-500 px-4 py-2 font-semibold">Enter World</Link>
+      </div>
+
       <div className="flex flex-wrap gap-3">
+        <Link href="/world" className="rounded-md border border-slate-700 px-4 py-2">World</Link>
         <Link href="/lobby" className="rounded-md border border-slate-700 px-4 py-2">Lobby</Link>
+        <Link href="/profile" className="rounded-md border border-slate-700 px-4 py-2">Profile</Link>
+        <Link href="/palace" className="rounded-md border border-slate-700 px-4 py-2">Palace</Link>
         <Link href="/leaderboards" className="rounded-md border border-slate-700 px-4 py-2">Leaderboards</Link>
         <Link href="/friends" className="rounded-md border border-slate-700 px-4 py-2">Friends</Link>
         <Link href="/invites" className="rounded-md border border-slate-700 px-4 py-2">Invites</Link>

@@ -34,7 +34,7 @@ export default function OnboardingPage() {
         .maybeSingle();
 
       if (profile) {
-        router.replace('/dashboard');
+        router.replace('/world');
       }
     });
   }, [router]);
@@ -61,7 +61,7 @@ export default function OnboardingPage() {
     if (error) {
       setMessage(error.message);
     } else {
-      router.replace('/dashboard');
+      router.replace('/world');
     }
 
     setLoading(false);
