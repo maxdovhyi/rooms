@@ -1,36 +1,69 @@
-# Ritual Rooms — Sprint 1 MVP
+# Ritual Rooms — Sprint 2 (Data + Schedule)
 
-MVP-минимум по `spec.md`: skeleton + auth + onboarding + dashboard.
+Спринт 2 реализует данные и расписание комнат из `spec.md`:
+- миграции БД (profiles, disciplines, room_templates, scheduled_rooms)
+- seed SQL для дисциплин и шаблонов комнат
+- API-генератор расписания на 24–48 часов (идемпотентно)
+- `/lobby` показывает ближайшие `scheduled_rooms` на 24 часа
 
 ## Что реализовано
-- Next.js (App Router) + TypeScript + Tailwind
-- Маршруты:
-  - `/` — логин/регистрация через Supabase magic link + кнопка Continue
-  - `/onboarding` — форма handle/age/gender + auto timezone и upsert в `public.profiles`
-  - `/dashboard` — отображение `handle`, `xp_total`, `level`, `streak`
-  - `/lobby` — список комнат из `room_templates`
-  - `/room/[id]` — каркас комнаты с кнопкой Start
+- `supabase/migrations/20260214120000_sprint2_data_schedule.sql`
+  - Таблицы: `profiles`, `disciplines`, `room_templates`, `scheduled_rooms`
+  - `room_templates` включает: `title`, `verification_mode`, `is_featured`, `created_at`
+  - `scheduled_rooms` содержит `template_id` + CHECK статус (`scheduled|running|ended|cancelled`)
+  - Индексы для основных запросов
+  - RLS + политики SELECT для `anon` и `authenticated` на `room_templates` и `scheduled_rooms`
+- `sql/seed_sprint2.sql`
+  - 3 дисциплины: Push-ups, Meditation, Wim Hof
+  - 5 шаблонов комнат (идемпотентный upsert)
+- `POST /api/schedule/generate`
+  - Генерирует почасовые `scheduled_rooms`
+  - По умолчанию: 24 часа, можно передать `hours` (1..48)
+  - Идемпотентность через `upsert` + уникальность `(template_id, start_at)`
+- `/lobby`
+  - Показывает комнаты на ближайшие 24 часа
+  - Отображает: `template title`, `status`, countdown до старта
 
-## Локальный запуск
+## Setup
 1. Установите зависимости:
    ```bash
    npm install
    ```
-2. Создайте `.env.local` на основе примера:
+2. Создайте env-файл:
    ```bash
    cp .env.example .env.local
    ```
-3. Заполните переменные Supabase в `.env.local`:
+3. Заполните переменные:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. Запустите dev-сервер:
+   - `SUPABASE_SERVICE_ROLE_KEY` (нужен для API-генератора)
+4. Запустите проект:
    ```bash
    npm run dev
    ```
-5. Откройте http://localhost:3000
 
-## Проверка потока
-1. На `/` введите email и отправьте magic link.
-2. После логина нажмите `Continue`.
-3. Если профиль отсутствует в `public.profiles`, откроется `/onboarding`.
-4. Заполните форму, после upsert произойдет редирект на `/dashboard`.
+## Применение SQL (Supabase)
+1. Примените миграцию `supabase/migrations/20260214120000_sprint2_data_schedule.sql`.
+2. Выполните seed `sql/seed_sprint2.sql`.
+
+## Запуск генератора расписания
+### Вариант 1: 24 часа (по умолчанию)
+```bash
+curl -X POST http://localhost:3000/api/schedule/generate
+```
+
+### Вариант 2: 48 часов
+```bash
+curl -X POST http://localhost:3000/api/schedule/generate \
+  -H "Content-Type: application/json" \
+  -d '{"hours":48}'
+```
+
+Пример ответа:
+```json
+{
+  "inserted": 120,
+  "templates": 5,
+  "hours": 24
+}
+```
